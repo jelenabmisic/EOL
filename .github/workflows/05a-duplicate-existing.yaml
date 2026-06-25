@@ -1,0 +1,42 @@
+name: Copy BBB-2 Repository
+
+on:
+  workflow_dispatch:
+    inputs:
+      visibility:
+        description: 'New repository visibility'
+        required: true
+        default: 'private'
+        type: choice
+        options:
+          - private
+          - public
+
+jobs:
+  copy-repository:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Create destination repository
+        env:
+          GH_TOKEN: ${{ secrets.CREATE_REPO_PAT }}
+        run: |
+          gh repo create ORG-JEDAN/BBB-copy \
+            --${{ github.event.inputs.visibility }} \
+            --description "Copy of BBB-2"
+
+          echo "Created ORG-JEDAN/BBB-copy"
+
+      - name: Mirror copy BBB-2 to BBB-copy
+        env:
+          GH_TOKEN: ${{ secrets.CREATE_REPO_PAT }}
+        run: |
+          git clone --mirror https://x-access-token:${GH_TOKEN}@github.com/ORG-JEDAN/BBB-2.git
+
+          cd BBB-2.git
+
+          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/ORG-JEDAN/BBB-copy.git
+
+          git push --mirror
+
+          echo "Repository copied successfully!"
