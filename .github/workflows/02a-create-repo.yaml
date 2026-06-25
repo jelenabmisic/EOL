@@ -1,0 +1,44 @@
+name: Create BBB-1 Repository
+
+on:
+  workflow_dispatch: # Allows you to manually trigger the workflow from the Actions tab
+    inputs:
+      visibility:
+        description: 'Repository visibility'
+        required: true
+        default: 'private'
+        type: choice
+        options:
+          - private
+          - public
+
+jobs:
+  create-new-repo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout current repository (BBB)
+        uses: actions/checkout@v4
+        with:
+          # Fetch all history so you can push it to the new repo if desired
+          fetch-depth: 0 
+
+      - name: Create new repository (BBB-1)
+        env:
+          # We must use the PAT, not the default GITHUB_TOKEN
+          GH_TOKEN: ${{ secrets.CREATE_REPO_PAT }}
+        run: |
+          # Use GitHub CLI to create the repository
+          gh repo create jelenabmisic/BBB-1 --${{ github.event.inputs.visibility }} --description "Repository created automatically from BBB"
+          
+          echo "Repository jelenabmisic/BBB-1 created successfully!"
+
+      - name: Push current code to the new repository (Optional)
+        env:
+          GH_TOKEN: ${{ secrets.CREATE_REPO_PAT }}
+        run: |
+          # Set the new repository as a remote
+          git remote add new-repo https://${{ secrets.CREATE_REPO_PAT }}@github.com/jelenabmisic/BBB-1.git
+          
+          # Push the main branch to the new repository
+          # Note: Change 'main' to your default branch if it's 'master'
+          git push -u new-repo main
